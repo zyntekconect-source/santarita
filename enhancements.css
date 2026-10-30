@@ -1,0 +1,327 @@
+/* ================================================
+   SANTA RITA — ENHANCEMENTS
+   Camada de refinamento visual: scrollbar, profundidade,
+   animações de scroll e microinterações.
+   Não substitui style.css — apenas complementa.
+   ================================================ */
+
+/* ===== 1. BARRA DE ROLAGEM AZUL ===== */
+html { scrollbar-width: thin; scrollbar-color: var(--marinho, #16213A) var(--papel, #F1EEE7); }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--papel, #F1EEE7); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--marinho-2, #1E2E4C), var(--marinho, #16213A));
+  border-radius: 20px;
+  border: 2px solid var(--papel, #F1EEE7);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--vermelho, #A32638); }
+
+/* Seleção de texto na cor da marca */
+::selection { background: var(--marinho, #16213A); color: #fff; }
+
+/* Barra de progresso de leitura, no topo */
+#sr-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--marinho, #16213A), var(--vermelho, #A32638));
+  z-index: 9999; transition: width .12s ease-out;
+}
+
+/* ===== 2. PROFUNDIDADE DE FUNDO (hero / topo) ===== */
+.hero, .auth-split__visual, .prod-hero, .banner-topo {
+  position: relative;
+  overflow: hidden;
+}
+.sr-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: .35;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+.sr-blob--1 { width: 340px; height: 340px; background: var(--marinho, #16213A); top: -80px; right: -60px; }
+.sr-blob--2 { width: 260px; height: 260px; background: var(--vermelho, #A32638); bottom: -80px; left: -40px; opacity: .18; }
+.sr-blob--3 { width: 200px; height: 200px; background: var(--latao, #A9812F); top: 40%; left: 55%; opacity: .14; }
+
+@keyframes sr-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(18px, -22px) scale(1.06); }
+}
+.sr-blob--1 { animation: sr-float 14s ease-in-out infinite; }
+.sr-blob--2 { animation: sr-float 18s ease-in-out infinite reverse; }
+.sr-blob--3 { animation: sr-float 11s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-blob { animation: none !important; }
+}
+
+/* Garante que o conteúdo real fique acima dos blobs */
+.hero__inner, .auth-split__visual-inner, .prod-hero__conteudo { position: relative; z-index: 1; }
+
+/* Textura sutil de grão para tirar a "cara de IA" chapada */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 2147483000; pointer-events: none;
+  opacity: .025; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===== 3. ANIMAÇÕES DE ENTRADA AO ROLAR ===== */
+.sr-up, .sr-fade, .sr-left, .sr-right, .sr-scale {
+  opacity: 0;
+  transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+  will-change: transform, opacity;
+}
+.sr-up    { transform: translateY(28px); }
+.sr-left  { transform: translateX(-32px); }
+.sr-right { transform: translateX(32px); }
+.sr-scale { transform: scale(.94); }
+.sr-fade  { }
+
+.sr-up.sr-visivel, .sr-fade.sr-visivel, .sr-left.sr-visivel,
+.sr-right.sr-visivel, .sr-scale.sr-visivel {
+  opacity: 1; transform: none;
+}
+
+/* Atraso em cascata para grupos de cards/itens */
+.sr-stagger > * { transition-delay: calc(var(--sr-i, 0) * 90ms); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-up, .sr-fade, .sr-left, .sr-right, .sr-scale { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+/* ===== 4. MICROINTERAÇÕES — cards, botões, imagens ===== */
+.produto-card, .cat-card, .card, .dash-card, .stat-card {
+  transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
+}
+.produto-card:hover, .cat-card:hover, .card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 34px rgba(29,35,51,.16);
+}
+
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: "";
+  position: absolute; top: 50%; left: 50%; width: 0; height: 0;
+  background: rgba(255,255,255,.35); border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width .5s ease, height .5s ease, opacity .5s ease;
+  opacity: 0; pointer-events: none;
+}
+.btn:active::after { width: 260px; height: 260px; opacity: 1; transition: 0s; }
+
+img { transition: filter .4s ease; }
+
+/* Header ganha sombra suave só depois de rolar (mais "vivo") */
+.header.sr-scrolled { box-shadow: 0 6px 20px rgba(29,35,51,.08); }
+
+/* Números/estatísticas contando — leve destaque ao entrar em tela */
+.sr-count.sr-visivel { animation: sr-pop .5s ease; }
+@keyframes sr-pop { 0% { transform: scale(.85); } 60% { transform: scale(1.04); } 100% { transform: scale(1); } }
+
+/* ===== 5. FAIXA DE ANÚNCIO ROTATIVA ===== */
+.anuncio-bar {
+  background: linear-gradient(90deg, var(--marinho, #16213A), var(--marinho-2, #1E2E4C));
+  color: #fff; text-align: center; font-size: .82rem; font-weight: 500;
+  height: 34px; position: relative; overflow: hidden;
+}
+.anuncio-bar__track { position: relative; height: 100%; }
+.anuncio-bar__item {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: #fff; text-decoration: none; opacity: 0; transform: translateY(8px);
+  transition: opacity .5s ease, transform .5s ease; padding-inline: 12px;
+}
+.anuncio-bar__item.is-ativo { opacity: 1; transform: translateY(0); }
+.anuncio-bar__item:hover { text-decoration: underline; }
+
+/* ===== 6. SELOS DE CONFIANÇA (badges circulares) ===== */
+.selos-confianca .diferenciais__inner { gap: 28px; }
+.diferencial__badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--papel-2, #E9E4D8); color: var(--marinho, #16213A);
+  flex-shrink: 0; transition: transform .3s ease, background .3s ease;
+}
+.diferencial:hover .diferencial__badge { background: var(--marinho, #16213A); color: #fff; transform: scale(1.08); }
+
+/* ===== 7. ESCOLHA PELO SEU JEITO DE DORMIR ===== */
+.jeito-dormir { padding-block: var(--espaco-secao); background: var(--papel, #F1EEE7); }
+.jeito-dormir__grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 32px;
+}
+.jeito-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  background: var(--branco, #fff); border: 1px solid var(--linha, #DAD3C4); border-radius: var(--raio-lg, 6px);
+  padding: 22px 18px; text-align: left; cursor: pointer; font-family: inherit;
+  transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease, border-color .3s ease;
+}
+.jeito-card:hover, .jeito-card:focus-visible {
+  transform: translateY(-5px); border-color: var(--marinho, #16213A);
+  box-shadow: 0 16px 30px rgba(29,35,51,.14); outline: none;
+}
+.jeito-card__icon {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--papel-2, #E9E4D8); color: var(--vermelho, #A32638);
+}
+.jeito-card strong { font-family: var(--fonte-display); font-size: 1.02rem; color: var(--tinta, #1D2333); }
+.jeito-card > span:last-child { font-size: .84rem; color: var(--texto-suave, #5B5647); line-height: 1.4; }
+.jeito-card.jeito-card--ativo { border-color: var(--vermelho, #A32638); box-shadow: 0 10px 24px rgba(163,38,56,.18); }
+
+/* ===== 8. MOTIVOS PARA ESCOLHER (zig-zag) ===== */
+.motivos { padding-block: var(--espaco-secao); }
+.motivo-bloco {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+  margin-top: 48px;
+}
+.motivo-bloco--inverso .motivo-bloco__img { order: 2; }
+.motivo-bloco--inverso .motivo-bloco__txt { order: 1; }
+.motivo-bloco__img { border-radius: var(--raio-lg, 6px); overflow: hidden; box-shadow: var(--sombra-md); }
+.motivo-bloco__img img { width: 100%; height: 340px; object-fit: cover; display: block; }
+.motivo-bloco__txt h3 { font-family: var(--fonte-display); font-size: clamp(1.3rem, 2vw, 1.7rem); margin: 8px 0 12px; color: var(--tinta); }
+.motivo-bloco__txt p { color: var(--texto-suave); line-height: 1.65; }
+@media (max-width: 760px) {
+  .motivo-bloco, .motivo-bloco--inverso { grid-template-columns: 1fr; }
+  .motivo-bloco--inverso .motivo-bloco__img, .motivo-bloco--inverso .motivo-bloco__txt { order: initial; }
+  .motivo-bloco__img img { height: 220px; }
+}
+
+/* ===== 9. NEWSLETTER ===== */
+.newsletter { background: var(--marinho, #16213A); padding-block: 56px; }
+.newsletter__inner {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px;
+}
+.newsletter__txt h2 { font-family: var(--fonte-display); color: #fff; font-size: 1.4rem; margin-bottom: 4px; }
+.newsletter__txt p { color: rgba(255,255,255,.72); font-size: .92rem; }
+.newsletter__form { display: flex; gap: 10px; flex-wrap: wrap; }
+.newsletter__form input {
+  min-width: 240px; padding: 12px 16px; border-radius: var(--raio, 4px); border: 1px solid transparent;
+  font-family: inherit; font-size: .92rem;
+}
+.newsletter__form input:focus { outline: 2px solid var(--vermelho, #A32638); }
+
+/* ===== 10. AVATAR COM FOTO NOS DEPOIMENTOS ===== */
+.dep-card__avatar { overflow: hidden; }
+.dep-card__avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+/* ================================================
+   11. WIDGET DE SUPORTE (substitui o botão isolado de WhatsApp)
+   Botão flutuante no canto direito com ícone de headset.
+   Ao clicar, abre um mini-chat com perguntas prontas e
+   atalhos para WhatsApp/Instagram.
+   ================================================ */
+.suporte-fab {
+  position: fixed; right: 24px; bottom: 24px; z-index: 200;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--marinho, #16213A); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 26px rgba(22,33,58,.35); border: 0; cursor: pointer;
+  transition: transform .25s ease, background .25s ease;
+}
+.suporte-fab:hover { transform: scale(1.06); background: var(--vermelho, #A32638); }
+.suporte-fab::before {
+  /* pulso suave para chamar atenção sem ser irritante */
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--vermelho, #A32638); opacity: 0;
+  animation: suporte-pulso 2.8s ease-out infinite;
+}
+@keyframes suporte-pulso {
+  0% { transform: scale(1); opacity: .55; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.suporte-fab__badge {
+  position: absolute; top: -2px; right: -2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--vermelho, #A32638); border: 2px solid var(--papel, #F1EEE7);
+}
+
+.suporte-painel {
+  position: fixed; right: 24px; bottom: 92px; z-index: 200;
+  width: min(340px, calc(100vw - 32px)); max-height: min(480px, calc(100vh - 140px));
+  background: #fff; border-radius: 16px; box-shadow: 0 24px 60px rgba(20,25,40,.28);
+  display: flex; flex-direction: column; overflow: hidden;
+  opacity: 0; transform: translateY(16px) scale(.97); pointer-events: none;
+  transition: opacity .22s ease, transform .22s ease;
+}
+.suporte-painel.aberto { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+
+.suporte-painel__header {
+  background: var(--marinho, #16213A); color: #fff; padding: 16px 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.suporte-painel__header svg { flex-shrink: 0; }
+.suporte-painel__header strong { display: block; font-family: var(--fonte-display); font-size: .98rem; }
+.suporte-painel__header span { display: block; font-size: .76rem; opacity: .78; }
+.suporte-painel__fechar {
+  margin-left: auto; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.14); color: #fff; flex-shrink: 0;
+}
+.suporte-painel__fechar:hover { background: rgba(255,255,255,.26); }
+
+.suporte-painel__corpo { padding: 16px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.suporte-painel__msg {
+  background: var(--papel-2, #E9E4D8); color: var(--tinta, #1D2333); border-radius: 12px 12px 12px 2px;
+  padding: 10px 14px; font-size: .86rem; line-height: 1.45; max-width: 92%;
+}
+.suporte-painel__grupo-titulo { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-suave, #5B5647); margin-bottom: 6px; }
+.suporte-painel__opcoes { display: flex; flex-direction: column; gap: 8px; }
+.suporte-opcao {
+  text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--linha, #DAD3C4);
+  background: #fff; font-size: .86rem; color: var(--tinta, #1D2333);
+  display: flex; align-items: center; gap: 10px; transition: var(--transicao, .2s ease);
+}
+.suporte-opcao:hover { border-color: var(--marinho, #16213A); background: var(--papel, #F1EEE7); }
+.suporte-opcao svg { flex-shrink: 0; color: var(--vermelho, #A32638); }
+
+.suporte-painel__canais { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--linha, #DAD3C4); }
+.suporte-canal {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 8px; border-radius: 10px; font-size: .78rem; font-weight: 600;
+  color: #fff; transition: var(--transicao, .2s ease);
+}
+.suporte-canal--whats { background: #25D366; }
+.suporte-canal--insta { background: linear-gradient(135deg, #F58529, #DD2A7B 45%, #8134AF 75%, #515BD4); }
+.suporte-canal:hover { filter: brightness(1.06); transform: translateY(-2px); }
+
+@media (max-width: 480px) {
+  .suporte-fab { right: 16px; bottom: 16px; width: 52px; height: 52px; }
+  .suporte-painel { right: 16px; bottom: 82px; }
+}
+
+/* ================================================
+   12. ONDAS DECORATIVAS (tema colchão/conforto)
+   Divisores de seção com ondulação animada suave —
+   remete ao "acomodar-se" e ao conforto do sono.
+   ================================================ */
+.sr-onda {
+  position: relative; width: 100%; overflow: hidden; line-height: 0;
+  background: var(--papel, #F1EEE7);
+}
+.sr-onda svg { display: block; width: calc(100% + 1.3px); height: 64px; }
+.sr-onda--topo { transform: rotate(180deg); margin-bottom: -1px; }
+.sr-onda .sr-onda__camada1 { fill: rgba(22,33,58,.06); animation: sr-onda-desliza 22s linear infinite; }
+.sr-onda .sr-onda__camada2 { fill: var(--marinho, #16213A); }
+
+@keyframes sr-onda-desliza {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sr-onda .sr-onda__camada1 { animation: none; }
+}
+
+/* Respiração suave nos ícones de conforto (badges/diferenciais/jeito-dormir) —
+   um "inflar/desinflar" bem sutil que remete ao acolchoado. */
+@keyframes sr-respirar {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.diferencial__badge, .jeito-card__icon {
+  animation: sr-respirar 5s ease-in-out infinite;
+}
+.diferencial:nth-child(2) .diferencial__badge  { animation-delay: .3s; }
+.diferencial:nth-child(3) .diferencial__badge  { animation-delay: .6s; }
+.diferencial:nth-child(4) .diferencial__badge  { animation-delay: .9s; }
+.diferencial:nth-child(5) .diferencial__badge  { animation-delay: 1.2s; }
+@media (prefers-reduced-motion: reduce) {
+  .diferencial__badge, .jeito-card__icon { animation: none; }
+}
