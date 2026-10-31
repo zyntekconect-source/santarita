@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="dashboard.css" />
   <link rel="icon" href="logo-aba.png" type="image/png" sizes="32x32">
 </head>
-<body class="dash-page">
+<body class="dash-page dash-verificando">
 
   <!-- ===== LAYOUT SIDEBAR ===== -->
   <div class="db-layout">
@@ -52,21 +52,9 @@
             </button>
           </li>
           <li>
-            <button class="db-nav-item" data-section="section-clientes">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              Clientes Cadastrados
-            </button>
-          </li>
-          <li>
             <button class="db-nav-item" data-section="section-estoque">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               Estoque
-            </button>
-          </li>
-          <li>
-            <button class="db-nav-item" data-section="section-favoritos">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              Favoritos
             </button>
           </li>
           <li>
@@ -231,6 +219,14 @@
                   <label for="df-tecnologia" class="field__label">Tecnologia</label>
                   <input type="text" id="df-tecnologia" class="field__input" placeholder="Ex: Molas Pocket" />
                 </div>
+                <div class="field">
+                  <label for="df-tag" class="field__label">Etiqueta <span class="field__hint-inline">(opcional)</span></label>
+                  <input type="text" id="df-tag" class="field__input" placeholder="Ex: Lançamento, Oferta" maxlength="24" />
+                </div>
+                <div class="field">
+                  <label for="df-estoque" class="field__label">Quantidade em estoque</label>
+                  <input type="number" id="df-estoque" class="field__input" placeholder="Ex: 5" min="0" step="1" />
+                </div>
                 <div class="field field--full">
                   <label class="field__label" for="btn-selecionar-imagem">Imagens do produto <span class="field__hint-inline">(a primeira é a principal · até 8)</span></label>
 
@@ -276,41 +272,12 @@
           </div>
         </section>
 
-        <!-- ===== SEÇÃO: CLIENTES CADASTRADOS ===== -->
-        <section class="db-section" id="section-clientes" aria-labelledby="titulo-clientes" hidden>
-          <div class="db-section-header">
-            <div>
-              <h1 class="db-section-title" id="titulo-clientes">Clientes Cadastrados</h1>
-              <p class="db-section-sub">Lista de todos os usuários registrados no sistema.</p>
-            </div>
-          </div>
-
-          <div class="db-card">
-            <div class="dash-table-wrap">
-              <table class="dash-table" id="dash-tabela-usuarios">
-                <thead>
-                  <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col">E-mail</th>
-                    <th scope="col">Telefone</th>
-                    <th scope="col">Perfil</th>
-                    <th scope="col">Cadastrado em</th>
-                  </tr>
-                </thead>
-                <tbody id="dash-usuarios-body">
-                  <!-- Renderizado via JS -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
         <!-- ===== SEÇÃO: ESTOQUE ===== -->
         <section class="db-section" id="section-estoque" aria-labelledby="titulo-estoque" hidden>
           <div class="db-section-header">
             <div>
               <h1 class="db-section-title" id="titulo-estoque">Estoque</h1>
-              <p class="db-section-sub">Quantidade e distribuição dos produtos por categoria.</p>
+              <p class="db-section-sub">Quantidade em estoque de cada produto. Para alterar, edite o produto.</p>
             </div>
           </div>
 
@@ -331,22 +298,6 @@
                   <!-- Renderizado via JS -->
                 </tbody>
               </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- ===== SEÇÃO: FAVORITOS ===== -->
-        <section class="db-section" id="section-favoritos" aria-labelledby="titulo-favoritos" hidden>
-          <div class="db-section-header">
-            <div>
-              <h1 class="db-section-title" id="titulo-favoritos">Favoritos</h1>
-              <p class="db-section-sub">Ranking dos produtos mais favoritados pelos clientes.</p>
-            </div>
-          </div>
-
-          <div class="db-card">
-            <div id="db-favoritos-ranking">
-              <!-- Renderizado via JS -->
             </div>
           </div>
         </section>

@@ -503,12 +503,18 @@ const renderizarVitrine = async () => {
     grid.appendChild(sk);
   }
 
-  // Buscar produtos (mock + filtros)
+  // Preço: com o controle no máximo, não há limite (senão produtos mais caros que o
+  // máximo do controle nunca apareceriam na vitrine).
+  const sliderPreco = document.getElementById('filtro-preco');
+  const maxSlider   = sliderPreco ? (Number(sliderPreco.max) || 5000) : 5000;
+  const precoMaxAtivo = State.filtroPrecoMax < maxSlider ? State.filtroPrecoMax : undefined;
+
+  // Buscar produtos (filtros)
   let produtos;
   try {
     produtos = await API.carregarProdutos({
       categoria: State.categoriaSelecionada !== 'todos' ? State.categoriaSelecionada : undefined,
-      precoMax: State.filtroPrecoMax,
+      precoMax: precoMaxAtivo,
       densidade: State.filtroDensidade,
       ordenacao: State.filtroOrdenacao,
     });
@@ -521,8 +527,25 @@ console.log('Quantidade:', produtos.length);
     return;
   }
 
-  // Aplicar limite de destaque
-  const lista = produtos;
+  // Página inicial (sem filtro e sem "Ver todos"): só os produtos em destaque.
+  // Se nenhum produto estiver marcado como destaque, mostra todos para a vitrine não ficar vazia.
+  const temFiltro =
+    State.categoriaSelecionada !== 'todos' ||
+    precoMaxAtivo !== undefined ||
+    (State.filtroDensidade && State.filtroDensidade !== 'todas');
+  const modoInicial = !State.mostrandoTodos && !temFiltro;
+
+  let lista = produtos;
+  let temMais = false;   // existem produtos além dos destaques?
+  if (modoInicial) {
+    const destaques = produtos.filter(p => p.destaque);
+    if (destaques.length) {
+      lista = destaques;
+      temMais = produtos.length > destaques.length;
+    }
+    const tituloVitrine = document.getElementById('vitrine-titulo');
+    if (tituloVitrine) tituloVitrine.textContent = destaques.length ? 'Produtos em Destaque' : 'Nossos Produtos';
+  }
 
   // Limpar grid
   grid.innerHTML = '';
@@ -542,7 +565,9 @@ console.log('Quantidade:', produtos.length);
   // Atualizar subtítulo
   if (subtitulo) {
     const catNome = State.categoriaSelecionada === 'todos' ? '' : ` em ${CATEGORIAS_DATA.find(c => c.id === State.categoriaSelecionada)?.nome}`;
-    subtitulo.textContent = `${lista.length} produto(s) encontrado(s)${catNome}.`;
+    subtitulo.textContent = modoInicial && temMais
+      ? `${lista.length} produto(s) em destaque.`
+      : `${lista.length} produto(s) encontrado(s)${catNome}.`;
   }
 
   // Renderizar cards
@@ -619,7 +644,8 @@ console.log('Quantidade:', produtos.length);
   // Botão "Ver Todos"
   const btnVerTodos = document.getElementById('btn-ver-todos');
   if (btnVerTodos) {
-    btnVerTodos.style.display = State.mostrandoTodos ? 'none' : '';
+    // só aparece se houver produtos além dos destaques
+    btnVerTodos.style.display = (modoInicial && temMais) ? '' : 'none';
   }
 };
 

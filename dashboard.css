@@ -46,6 +46,9 @@
   min-height: 100vh;
 }
 
+/* Painel escondido até confirmar que o usuário é admin */
+.dash-verificando .db-layout { visibility: hidden; }
+
 /* ── Layout principal ── */
 .db-layout {
   display: flex;

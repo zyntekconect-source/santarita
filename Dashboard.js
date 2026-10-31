@@ -42,6 +42,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   await iniciarDashboard();
 });
 
+/* Tela exibida quando a conta não é admin (mostra o motivo, em vez de só redirecionar) */
+function dbMostrarAcessoNegado(email, erro) {
+  const motivo = erro
+    ? `Não foi possível verificar a permissão (${erro.message || erro.code || 'erro desconhecido'}). Confira se a tabela "admins" foi criada no Supabase (arquivo seguranca.sql).`
+    : `A conta <strong>${email}</strong> não está cadastrada como administradora.`;
+
+  const tela = document.createElement('div');
+  tela.setAttribute('role', 'alert');
+  tela.style.cssText = 'position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:24px;background:#f3f4f6;font-family:Inter,Arial,sans-serif;';
+  tela.innerHTML = `
+    <div style="max-width:440px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:32px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.08)">
+      <h1 style="margin:0 0 10px;font-size:1.3rem;color:#111827">Acesso restrito</h1>
+      <p style="margin:0 0 22px;color:#6b7280;line-height:1.6;font-size:.92rem">${motivo}</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a href="index.html" class="btn btn--ghost">Voltar ao site</a>
+        <button type="button" class="btn btn--primario" id="acesso-negado-sair">Sair e entrar com outra conta</button>
+      </div>
+    </div>`;
+  document.body.appendChild(tela);
+  document.getElementById('acesso-negado-sair')?.addEventListener('click', sairDashboard);
+}
+
 async function iniciarDashboard() {
 
   // Verificar sessão do Supabase
@@ -59,6 +81,22 @@ async function iniciarDashboard() {
 
   const usuario = session.user;
 
+  /* ── Só administradores entram (tabela "admins" no Supabase) ──
+     Obs.: a trava de verdade são as regras (RLS) do banco; esta checagem
+     evita que um cliente logado veja o painel. */
+  const { data: ehAdmin, error: erroAdmin } = await supabaseClient
+    .from('admins')
+    .select('user_id')
+    .eq('user_id', usuario.id)
+    .maybeSingle();
+
+  if (erroAdmin || !ehAdmin) {
+    console.warn('Acesso negado ao dashboard.', erroAdmin || 'usuário não é administrador');
+    dbMostrarAcessoNegado(usuario.email, erroAdmin);
+    return;
+  }
+
+  document.body.classList.remove('dash-verificando');
   console.log('Admin autenticado:', usuario.email);
 
   /* ── Saudação ── */
@@ -97,9 +135,7 @@ async function iniciarDashboard() {
   dbInitSidebar();
   await dbRenderGeral();
   await dbRenderTabelaProdutos();
-  dbRenderUsuarios();
   await dbRenderEstoque();
-  await dbRenderFavoritos();
   await dbRenderMetricas();
   dbInitFormProduto();
   dbInitFiltrosProdutos();
@@ -123,9 +159,7 @@ function dbInitSidebar() {
     'section-geral':        'Dashboard Geral',
     'section-produtos':     'Gerenciamento de Produtos',
     'section-novo-produto': 'Novo Produto',
-    'section-clientes':     'Clientes Cadastrados',
     'section-estoque':      'Estoque',
-    'section-favoritos':    'Favoritos',
     'section-metricas':     'Métricas',
   };
 
@@ -196,39 +230,26 @@ function dbInitSidebar() {
 }
 
 /* ============================================================
-   DASHBOARD GERAL — overview + gráfico
+   DASHBOARD GERAL — overview + gráfico (dados reais do Supabase)
    ============================================================ */
 async function dbRenderGeral() {
   const produtos = await Dashboard.getProdutos();
-  const usuarios = Auth.getUsuarios();
-  const favsRaw  = JSON.parse(localStorage.getItem('sr_favoritos') || '[]');
 
-  const totalProdutos = produtos.length;
-  const totalClientes = usuarios.filter(u => u.role === 'Cliente').length;
-  const totalFavs     = favsRaw.length;
-  const totalDestaque = produtos.filter(p => p.destaque).length;
+  const total      = produtos.length;
+  const destaque   = produtos.filter(p => p.destaque).length;
+  const semEstoque = produtos.filter(p => !(Number(p.estoque) > 0)).length;
+  const unidades   = produtos.reduce((s, p) => s + (Number(p.estoque) || 0), 0);
+  const ticket     = total ? produtos.reduce((s, p) => s + (Number(p.preco) || 0), 0) / total : 0;
 
   const CARDS = [
-    {
-      cor: 'blue', valor: totalProdutos, label: 'Total de Produtos',
-      detalhe: `${totalDestaque} em destaque`,
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
-    },
-    {
-      cor: 'green', valor: totalClientes, label: 'Total de Clientes',
-      detalhe: `${usuarios.filter(u => u.role !== 'Cliente').length} administrador(es)`,
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-    },
-    {
-      cor: 'red', valor: totalFavs, label: 'Produtos Favoritados',
-      detalhe: 'total de favoritos registrados',
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
-    },
-    {
-      cor: 'orange', valor: totalProdutos, label: 'Produtos em Estoque',
-      detalhe: `ticket médio ${_fmt(produtos.reduce((s, p) => s + (p.preco || 0), 0) / (totalProdutos || 1))}`,
-      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
-    },
+    { cor: 'blue',   valor: total,    label: 'Total de Produtos',    detalhe: 'cadastrados no catálogo',
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>` },
+    { cor: 'red',    valor: destaque, label: 'Em Destaque',          detalhe: 'aparecem na vitrine do site',
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` },
+    { cor: 'orange', valor: unidades, label: 'Unidades em Estoque',  detalhe: `${semEstoque} produto(s) sem estoque`,
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>` },
+    { cor: 'green',  valor: _fmt(ticket), label: 'Preço Médio',      detalhe: 'média dos produtos cadastrados',
+      icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>` },
   ];
 
   const grid = document.getElementById('db-overview-grid');
@@ -245,12 +266,7 @@ async function dbRenderGeral() {
   }
 
   /* Gráfico de barras por categoria */
-  const CATS = [
-    { id: 'colchao', nome: 'Colchões' }, { id: 'cama', nome: 'Cama' },
-    { id: 'sofa', nome: 'Sofá' },        { id: 'cabeceira', nome: 'Cabeceira' },
-    { id: 'puff', nome: 'Puff' },        { id: 'travesseiro', nome: 'Travesseiro' },
-    { id: 'almofada', nome: 'Almofada' },{ id: 'poltrona', nome: 'Poltrona' },
-  ];
+  const CATS = Object.entries(CATS_NOMES).map(([id, nome]) => ({ id, nome }));
   const countByCat = {};
   CATS.forEach(c => { countByCat[c.id] = produtos.filter(p => p.categoria === c.id).length; });
   const maxCount = Math.max(...Object.values(countByCat), 1);
@@ -384,36 +400,7 @@ function dbInitFiltrosProdutos() {
 }
 
 /* ============================================================
-   CLIENTES — tabela
-   ============================================================ */
-function dbRenderUsuarios() {
-  const usuarios = Auth.getUsuarios();
-  const tbody = document.getElementById('dash-usuarios-body');
-  if (!tbody) return;
-
-  if (!usuarios.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:#9ca3af;">Nenhum usuário cadastrado.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = usuarios.map(u => `
-    <tr>
-      <td style="font-weight:600">${u.nome || '—'}</td>
-      <td>${u.email || '—'}</td>
-      <td>${u.telefone || '—'}</td>
-      <td>
-        <span class="dash-status ${u.role === 'Cliente' ? 'dash-status--nao' : 'dash-status--sim'}">
-          ${u.role || 'Cliente'}
-        </span>
-      </td>
-      <td style="color:#9ca3af;font-size:.8rem;">
-        ${u.criadoEm ? new Date(u.criadoEm).toLocaleDateString('pt-BR') : '—'}
-      </td>
-    </tr>`).join('');
-}
-
-/* ============================================================
-   ESTOQUE — tabela com quantidade simulada
+   ESTOQUE — quantidade real de cada produto
    ============================================================ */
 async function dbRenderEstoque() {
   const produtos = await Dashboard.getProdutos();
@@ -426,8 +413,9 @@ async function dbRenderEstoque() {
   }
 
   tbody.innerHTML = produtos.map(p => {
-    const qty = (parseInt(String(p.id)) * 7) % 50 + 3;
-    const cls = qty > 20 ? 'db-estoque-qty--ok' : qty > 8 ? 'db-estoque-qty--med' : 'db-estoque-qty--low';
+    const qty = Number(p.estoque) || 0;
+    const cls = qty > 15 ? 'db-estoque-qty--ok' : qty > 5 ? 'db-estoque-qty--med' : 'db-estoque-qty--low';
+    const txt = qty === 0 ? 'Sem estoque' : `${qty} un.`;
     return `
       <tr>
         <td>
@@ -447,92 +435,37 @@ async function dbRenderEstoque() {
             ? '<span class="dash-status dash-status--sim">✓ Sim</span>'
             : '<span class="dash-status dash-status--nao">— Não</span>'}
         </td>
-        <td class="text-center"><span class="db-estoque-qty ${cls}">${qty} un.</span></td>
+        <td class="text-center"><span class="db-estoque-qty ${cls}">${txt}</span></td>
       </tr>`;
   }).join('');
 }
 
 /* ============================================================
-   FAVORITOS — ranking
-   ============================================================ */
-async function dbRenderFavoritos() {
-  const produtos = await Dashboard.getProdutos();
-  const favsRaw  = JSON.parse(localStorage.getItem('sr_favoritos') || '[]');
-  const container = document.getElementById('db-favoritos-ranking');
-  if (!container) return;
-
-  const contagem = {};
-  favsRaw.forEach(id => { contagem[id] = (contagem[id] || 0) + 1; });
-
-  const ranking = produtos
-    .map(p => ({ ...p, favCount: contagem[p.id] || contagem[String(p.id)] || 0 }))
-    .sort((a, b) => b.favCount - a.favCount)
-    .slice(0, 10);
-
-  if (!ranking.length || ranking.every(r => r.favCount === 0)) {
-    container.innerHTML = `<p class="db-fav-empty">Nenhum produto foi favoritado ainda.</p>`;
-    return;
-  }
-
-  const RANK_CLS = ['db-fav-rank--gold', 'db-fav-rank--silver', 'db-fav-rank--bronze'];
-  container.innerHTML = `
-    <div class="db-fav-list">
-      ${ranking.map((p, i) => `
-        <div class="db-fav-item">
-          <span class="db-fav-rank ${RANK_CLS[i] || ''}">${i + 1}</span>
-          <img src="${p.imagem || p.img || 'https://placehold.co/44x44?text=SR'}" alt="" width="44" height="44" class="db-fav-img" loading="lazy" onerror="this.src='https://placehold.co/44x44?text=SR'" />
-          <div class="db-fav-info">
-            <div class="db-fav-nome">${p.titulo}</div>
-            <div class="db-fav-cat">${CATS_NOMES[p.categoria] || p.categoria || '—'} · ${_fmt(p.preco)}</div>
-          </div>
-          <div class="db-fav-count">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            ${p.favCount}
-          </div>
-        </div>`).join('')}
-    </div>`;
-}
-
-/* ============================================================
-   MÉTRICAS
+   MÉTRICAS — resumo do catálogo (dados reais)
    ============================================================ */
 async function dbRenderMetricas() {
   const produtos = await Dashboard.getProdutos();
-  const usuarios = Auth.getUsuarios();
-  const favsRaw  = JSON.parse(localStorage.getItem('sr_favoritos') || '[]');
 
-  const contFav = {};
-  favsRaw.forEach(id => { contFav[id] = (contFav[id] || 0) + 1; });
-  const maisIdFav = Object.keys(contFav).sort((a, b) => contFav[b] - contFav[a])[0];
-  const maisFav   = produtos.find(p => p.id == maisIdFav) || produtos[0];
-
-  const precos  = produtos.map(p => p.preco).filter(Boolean);
+  const precos   = produtos.map(p => Number(p.preco)).filter(Boolean);
   const precoMed = precos.length ? precos.reduce((s, v) => s + v, 0) / precos.length : 0;
   const precoMin = precos.length ? Math.min(...precos) : 0;
   const precoMax = precos.length ? Math.max(...precos) : 0;
+  const unidades = produtos.reduce((s, p) => s + (Number(p.estoque) || 0), 0);
+  const semEstoque = produtos.filter(p => !(Number(p.estoque) > 0)).length;
+
+  const porCat = {};
+  produtos.forEach(p => { porCat[p.categoria] = (porCat[p.categoria] || 0) + 1; });
+  const [catTopId, catTopQtd] = Object.entries(porCat).sort((a, b) => b[1] - a[1])[0] || [null, 0];
 
   const METRICAS = [
-    {
-      ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
-      valor: produtos.length, label: 'Produtos no Catálogo', cor: 'azul',
-      detalhe: `${produtos.filter(p => p.destaque).length} em destaque`,
-    },
-    {
-      ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
-      valor: maisFav ? maisFav.titulo.split(' ').slice(0, 3).join(' ') + '…' : '—',
-      label: 'Produto Mais Favoritado', cor: 'vermelho',
-      detalhe: maisFav ? `${contFav[maisFav.id] || 0} ♥ registrado(s)` : 'Sem favoritos ainda',
-    },
-    {
-      ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-      valor: usuarios.length, label: 'Usuários Cadastrados', cor: 'verde',
-      detalhe: `${usuarios.filter(u => u.role === 'Cliente').length} clientes · ${usuarios.filter(u => u.role !== 'Cliente').length} admin`,
-    },
-    {
-      ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-      valor: _fmt(precoMed), label: 'Ticket Médio do Catálogo', cor: 'laranja',
-      detalhe: `de ${_fmt(precoMin)} a ${_fmt(precoMax)}`,
-    },
+    { ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`, cor: 'azul', valor: produtos.length, label: 'Produtos no Catálogo',
+      detalhe: `${produtos.filter(p => p.destaque).length} em destaque` },
+    { ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`, cor: 'laranja', valor: unidades, label: 'Unidades em Estoque',
+      detalhe: `${semEstoque} produto(s) sem estoque` },
+    { ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`, cor: 'verde', valor: _fmt(precoMed), label: 'Preço Médio do Catálogo',
+      detalhe: precos.length ? `de ${_fmt(precoMin)} a ${_fmt(precoMax)}` : 'Sem produtos ainda' },
+    { ico: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`, cor: 'vermelho', valor: catTopId ? (CATS_NOMES[catTopId] || catTopId) : '—', label: 'Categoria com Mais Produtos',
+      detalhe: catTopId ? `${catTopQtd} produto(s)` : 'Sem produtos ainda' },
   ];
 
   const grid = document.getElementById('metricas-grid');
@@ -596,6 +529,8 @@ function dbInitFormProduto() {
     const tecnologia = document.getElementById('df-tecnologia')?.value.trim();
     const descricao  = document.getElementById('df-descricao')?.value.trim();
     const destaque   = document.getElementById('df-destaque')?.checked;
+    const tag        = document.getElementById('df-tag')?.value.trim();
+    const estoque    = Math.max(0, parseInt(document.getElementById('df-estoque')?.value, 10) || 0);
 
     if (!nome || !preco || !categoria) {
       dbToast('Preencha os campos obrigatórios: Nome, Preço e Categoria.', 'erro');
@@ -638,8 +573,8 @@ function dbInitFormProduto() {
         imagem: urls[0] || '',            // principal (usada pela vitrine)
         descricao,
         destaque,
-        tag:     _produtoEmEdicao?.tag || null,
-        estoque: _produtoEmEdicao?.estoque || 0,
+        tag:     tag || null,
+        estoque,
       };
 
       const salvo = (_modoEdicao && id)
@@ -745,6 +680,8 @@ function dbAbrirFormEdicao(p) {
   document.getElementById('df-tecnologia').value = p.especificacoes || '';
   document.getElementById('df-descricao').value  = p.descricao || '';
   document.getElementById('df-destaque').checked = !!p.destaque;
+  document.getElementById('df-tag').value        = p.tag || '';
+  document.getElementById('df-estoque').value    = Number(p.estoque) || 0;
 
   // principal primeiro, depois as extras
   const urls = dbUrlsDoProduto(p);
@@ -783,7 +720,6 @@ async function dbRefreshTudo() {
     document.getElementById('dash-filtro-cat')?.value || 'todos'
   );
   await dbRenderEstoque();
-  await dbRenderFavoritos();
   await dbRenderMetricas();
 }
 
