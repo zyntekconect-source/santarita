@@ -121,8 +121,8 @@
     (function initSuporteWidget() {
       if (document.querySelector('.suporte-fab')) return; // evita duplicar
 
-      var NUM_WHATS = '5599701-7188';
-      var LINK_INSTA = 'https://instagram.com/santaritacolchoes';
+      var NUM_WHATS = '44998608375';
+      var LINK_INSTA = 'https://instagram.com/santarita.colchoesoficial';
 
       var perguntas = [
         { texto: 'Qual o prazo de entrega?', resposta: 'Entregamos e montamos em até 5 dias úteis dentro da cidade — sem custo adicional.' },

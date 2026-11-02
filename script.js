@@ -113,6 +113,31 @@ const DEPOIMENTOS_DATA = [
   },
 ];
 
+/* Instagram da loja — o mesmo @ do rodapé do index.html (e do enhancements.js) */
+const INSTAGRAM_USUARIO = 'santarita.colchoesoficial';
+const INSTAGRAM_URL     = `https://www.instagram.com/${INSTAGRAM_USUARIO}/`;
+
+/* Posts do feed: cole aqui os links dos posts/reels que quer mostrar
+   (no Instagram: ⋯ > Copiar link). Ex.: 'https://www.instagram.com/p/ABC123/' */
+const INSTAGRAM_POSTS = [
+  // 'https://www.instagram.com/p/XXXXXXXXXXX/',
+];
+
+const initInstagramFeed = () => {
+  const feed = document.getElementById('insta-feed');
+  if (!feed) return;
+  const lista = INSTAGRAM_POSTS.length ? INSTAGRAM_POSTS : [INSTAGRAM_URL];
+  feed.innerHTML = lista.map(url => `
+    <blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14"
+      style="background:#fff;border:0;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.15);margin:0;max-width:540px;min-width:280px;width:100%;padding:0">
+      <a href="${url}" target="_blank" rel="noopener" style="display:block;padding:24px;text-align:center">Ver no Instagram</a>
+    </blockquote>`).join('');
+  const sc = document.createElement('script');
+  sc.async = true;
+  sc.src = 'https://www.instagram.com/embed.js';
+  document.body.appendChild(sc);
+};
+
 /* ================================================
    3. STATE — estado global client-side
    ================================================ */
@@ -716,6 +741,34 @@ const initDepoimentos = () => {
     dotsWrap?.appendChild(dot);
   });
 
+  // Último cartão do carrossel: convite para ver os clientes no Instagram da loja
+  const cartaoInsta = document.createElement('a');
+  cartaoInsta.className = 'dep-card dep-card--insta';
+  cartaoInsta.href = INSTAGRAM_URL;
+  cartaoInsta.target = '_blank';
+  cartaoInsta.rel = 'noopener';
+  cartaoInsta.setAttribute('role', 'listitem');
+  cartaoInsta.setAttribute('aria-label', `Ver a Santa Rita no Instagram, @${INSTAGRAM_USUARIO}`);
+  cartaoInsta.innerHTML = `
+    <svg class="dep-card--insta__icone" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="5"/>
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+    </svg>
+    <strong class="dep-card--insta__titulo">Veja nossos clientes no Instagram</strong>
+    <span class="dep-card--insta__sub">Fotos de quem já comprou, novidades e promoções.</span>
+    <span class="dep-card--insta__btn">@${INSTAGRAM_USUARIO}</span>`;
+  track.appendChild(cartaoInsta);
+
+  State.depTotal = DEPOIMENTOS_DATA.length + 1;
+  const dotInsta = document.createElement('button');
+  dotInsta.className = 'dep__dot';
+  dotInsta.setAttribute('role', 'tab');
+  dotInsta.setAttribute('aria-label', 'Ir para o Instagram da loja');
+  dotInsta.setAttribute('aria-selected', 'false');
+  dotInsta.addEventListener('click', () => irParaDep(DEPOIMENTOS_DATA.length));
+  dotsWrap?.appendChild(dotInsta);
+
   document.getElementById('dep-prev')?.addEventListener('click', () => {
     irParaDep(State.depoimentoAtual - 1);
   });
@@ -1000,18 +1053,17 @@ const toggleFavorito = async (produtoId, btnEl) => {
 };
 
 const adicionarAoCarrinho = async (produto) => {
-  await API.adicionarAoCarrinho(produto.id, 1);
-
-  const existente = State.carrinho.find(i => i.produto.id === produto.id);
-  if (existente) {
-    existente.quantidade++;
-  } else {
-    State.carrinho.push({ produto, quantidade: 1 });
-  }
-
-  const total = State.carrinho.reduce((s, i) => s + i.quantidade, 0);
-  atualizarBadge('badge-carrinho', total);
+  Carrinho.adicionar(produto);
   mostrarToast(`🛒 "${produto.titulo}" adicionado ao carrinho!`, 'sucesso');
+
+  // Se a gaveta do carrinho estiver aberta, atualiza na hora
+  const overlay = document.getElementById('drawer-overlay');
+  const body    = document.getElementById('drawer-body');
+  const footer  = document.getElementById('drawer-footer');
+  if (overlay?.classList.contains('aberto') && body && footer
+      && document.getElementById('drawer-titulo')?.textContent.includes('Carrinho')) {
+    renderDrawerCarrinho(body, footer);
+  }
 };
 
 /* ================================================
@@ -1199,6 +1251,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCategorias();
   renderizarVitrine();
   initDepoimentos();
+  initInstagramFeed();
   initModalLogin();
   initFiltros();
   initFooter();
@@ -1587,7 +1640,7 @@ const Carrinho = (() => {
 
     adicionar(produto, quantidade = 1) {
       const lista = _ler();
-      const idx   = lista.findIndex(i => i.produto.id === produto.id);
+      const idx   = lista.findIndex(i => String(i.produto.id) === String(produto.id));
       if (idx > -1) { lista[idx].quantidade += quantidade; }
       else          { lista.push({ produto, quantidade }); }
       _salvar(lista);
@@ -1603,7 +1656,7 @@ const Carrinho = (() => {
 
     alterar(produtoId, quantidade) {
       const lista = _ler();
-      const idx   = lista.findIndex(i => i.produto.id === produtoId);
+      const idx   = lista.findIndex(i => String(i.produto.id) === String(produtoId));
       if (idx === -1) return;
       if (quantidade <= 0) { lista.splice(idx, 1); }
       else { lista[idx].quantidade = quantidade; }
@@ -1739,8 +1792,8 @@ const renderDrawerCarrinho = (body, footer) => {
   // Eventos de quantidade e remoção
   body.querySelectorAll('.qtd-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id  = Number(btn.dataset.id);
-      const item = Carrinho.getItens().find(i => i.produto.id === id);
+      const id  = btn.dataset.id;
+      const item = Carrinho.getItens().find(i => String(i.produto.id) === id);
       if (!item) return;
       const nova = btn.dataset.acao === 'plus' ? item.quantidade + 1 : item.quantidade - 1;
       Carrinho.alterar(id, nova);
@@ -1749,7 +1802,7 @@ const renderDrawerCarrinho = (body, footer) => {
   });
   body.querySelectorAll('.drawer-item__remover').forEach(btn => {
     btn.addEventListener('click', () => {
-      Carrinho.remover(Number(btn.dataset.id));
+      Carrinho.remover(btn.dataset.id);
       renderDrawerCarrinho(body, footer);
       mostrarToast('Item removido do carrinho.', 'info');
     });
@@ -1764,7 +1817,7 @@ const renderDrawerCarrinho = (body, footer) => {
       <span class="drawer__total-valor">${formatarPreco(total)}</span>
     </div>
     <a
-      href="https://wa.me/5599701-7188?text=${encodeURIComponent(`Olá! Gostaria de finalizar meu pedido:\n${Carrinho.getItens().map(i=>`• ${i.produto.titulo} (${i.quantidade}×) — ${formatarPreco(i.produto.preco)}`).join('\n')}\nTotal: ${formatarPreco(total)}`)}"
+      href="https://wa.me/${String(CONFIG.WHATSAPP_VENDAS||'').replace(/\D/g,'')}?text=${encodeURIComponent(`Olá! Gostaria de finalizar meu pedido:\n${Carrinho.getItens().map(i=>`• ${i.produto.titulo} (${i.quantidade}×) — ${formatarPreco(i.produto.preco)}`).join('\n')}\nTotal: ${formatarPreco(total)}`)}"
       class="btn btn--primario btn--full"
       target="_blank" rel="noopener"
       onclick="fecharDrawer()"
