@@ -232,13 +232,14 @@ section { padding-block: var(--espaco-secao); }
 /* ================================================
    DIFERENCIAIS — grade única, sempre alinhada
    ================================================ */
-.diferenciais { background: var(--papel); }
+.diferenciais { background: var(--papel);  }
 .diferenciais__inner {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
 }
 .diferencial {
   display: flex; align-items: center; gap: 12px; padding: 22px 20px;
+   min-width: 0;
 }
 .diferencial:last-child { border-right: none; }
 .diferencial__icon { color: var(--vermelho); flex-shrink: 0; }
@@ -581,7 +582,7 @@ section { padding-block: var(--espaco-secao); }
 .auth-main { padding-block: 40px; }
 .auth-split {
   max-width: 1080px; margin-inline: auto; display: grid; grid-template-columns: 1fr 1.05fr;
-  border: 1px solid var(--linha); border-radius: var(--raio-lg); overflow: hidden; background: var(--branco); min-height: 560px;
+  border: 1px solid var(--linha); border-radius: 30px; overflow: hidden; background: var(--branco); min-height: 560px;
 }
 .auth-split__visual { background: var(--marinho); color: var(--branco); padding: 52px 44px; display: flex; flex-direction: column; justify-content: center; }
 .auth-visual__badge { margin-bottom: 22px; }
@@ -626,3 +627,47 @@ section { padding-block: var(--espaco-secao); }
 .insta-feed{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;justify-items:center;align-items:start}
 .insta-feed .instagram-media{margin:0 auto!important}
 .insta-cta{text-align:center;margin-top:32px}
+
+/* Crédito do desenvolvedor */
+.dev-link{color:#8b5cf6;font-weight:600;text-decoration:none;transition:color .2s}
+.dev-link:hover,.dev-link:focus-visible{color:#a78bfa;text-decoration:underline}
+
+/* ===== Gaveta do carrinho / favoritos ===== */
+.drawer-overlay{position:fixed;inset:0;background:rgba(22,33,58,.55);z-index:1000;display:flex;justify-content:flex-end;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.drawer-overlay.aberto{opacity:1;visibility:visible}
+.drawer{background:var(--branco);width:min(420px,100%);height:100%;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s ease;box-shadow:-8px 0 30px rgba(0,0,0,.2)}
+.drawer-overlay.aberto .drawer{transform:none}
+.drawer__header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--linha)}
+.drawer__titulo{display:flex;align-items:center;gap:8px;font-size:1.1rem;margin:0}
+.drawer__body{flex:1;overflow-y:auto;padding:12px 20px}
+.drawer__footer{padding:16px 20px;border-top:1px solid var(--linha);background:var(--papel)}
+.drawer__total{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-weight:700}
+.drawer__total-valor{font-size:1.25rem;color:var(--vermelho)}
+.drawer-vazio{text-align:center;padding:48px 8px;color:var(--texto-suave);display:flex;flex-direction:column;align-items:center;gap:14px}
+.drawer-item{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--linha)}
+.drawer-item__img{width:72px;height:72px;object-fit:cover;border-radius:8px;background:var(--papel);flex-shrink:0}
+.drawer-item__corpo{flex:1;min-width:0}
+.drawer-item__cat{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--texto-suave)}
+.drawer-item__nome{font-weight:600;font-size:.92rem;line-height:1.25}
+.drawer-item__preco{color:var(--vermelho);font-weight:700;margin-top:2px}
+.drawer-item__parcela{font-size:.74rem;color:var(--texto-suave)}
+.drawer-item__qtd{display:inline-flex;align-items:center;gap:10px;margin-top:8px;border:1px solid var(--linha);border-radius:8px;padding:2px 4px}
+.qtd-btn{width:28px;height:28px;border:0;background:transparent;font-size:1.1rem;cursor:pointer;border-radius:6px}
+.qtd-btn:hover{background:var(--papel)}
+.qtd-num{min-width:20px;text-align:center;font-weight:600}
+.drawer-item__remover{border:0;background:transparent;color:var(--texto-suave);cursor:pointer;padding:6px;border-radius:6px}
+.drawer-item__remover:hover{color:var(--vermelho);background:var(--papel)}
+
+/* Botão X do menu mobile */
+.nav__fechar{display:none}
+@media (max-width:900px){
+  .nav__fechar{display:flex;align-items:center;justify-content:center;position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;color:var(--tinta)}
+  .nav__fechar:hover{background:var(--papel)}
+}
+
+/* Logo no login (mobile) */
+.auth-form__logo img { width: 100%; height: auto; display: block; }
+@media (max-width: 860px) {
+  .auth-form__header { text-align: center; }
+  .auth-form__logo { width: 180px; margin: 0 auto 18px; }
+}

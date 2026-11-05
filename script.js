@@ -27,7 +27,7 @@
    1. CONFIG & CONSTANTES
    ================================================ */
 const CONFIG = {
-  WHATSAPP_VENDAS:  '5599701-7188',
+  WHATSAPP_VENDAS:  '5544998608375',
   WHATSAPP_SUPORTE: '5599860-8375',
   PRODUTOS_DESTAQUE: 8,
   DEP_VISIBLE_MOBILE:  1,
@@ -56,62 +56,10 @@ const CATEGORIAS_DATA = [
 ];
 
 
-const DEPOIMENTOS_DATA = [
-  {
-    id: 1,
-    texto: 'Comprei um colchão de molas pocket e a diferença foi imediata. Durmo muito melhor, as dores nas costas desapareceram em semanas. Atendimento top, entregaram no dia combinado e ainda montaram tudo!',
-    nome: 'Mariana Oliveira',
-    cidade: 'São Luís, MA',
-    estrelas: 5,
-    inicial: 'M',
-    foto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=160&q=80',
-  },
-  {
-    id: 2,
-    texto: 'A Santa Rita tem os melhores preços da cidade e ainda parcelam em 10x sem juros. Comprei a cama box e a cabeceira. O vendedor foi super paciente e me ajudou a escolher o colchão certo para o meu peso.',
-    nome: 'Carlos Eduardo',
-    cidade: 'Imperatriz, MA',
-    estrelas: 5,
-    inicial: 'C',
-    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&q=80',
-  },
-  {
-    id: 3,
-    texto: 'Precisava de um colchão sob medida para um quarto com formato diferente. A equipe fez exatamente o que precisei, tamanho personalizado e ainda entregaram antes do prazo. Recomendo sem hesitar!',
-    nome: 'Fernanda Costa',
-    cidade: 'Timon, MA',
-    estrelas: 5,
-    inicial: 'F',
-    foto: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=160&q=80',
-  },
-  {
-    id: 4,
-    texto: 'Comprei o sofá chaise e ficou incrível na sala. A qualidade do tecido e do acabamento é excelente. Passei dois anos pesquisando e a Santa Rita tinha o melhor custo-benefício com certeza.',
-    nome: 'Roberto Almeida',
-    cidade: 'São Luís, MA',
-    estrelas: 5,
-    inicial: 'R',
-    foto: 'https://images.unsplash.com/photo-1500614782310-d5401b9e0d21?w=160&q=80',
-  },
-  {
-    id: 5,
-    texto: 'Atendimento via WhatsApp muito rápido. Mandei a foto do meu quarto e o vendedor me ajudou a escolher a cabeceira certa. Chegou embalado perfeitamente e a montagem foi super fácil. Nota 10!',
-    nome: 'Patrícia Mendes',
-    cidade: 'Caxias, MA',
-    estrelas: 5,
-    inicial: 'P',
-    foto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=160&q=80',
-  },
-  {
-    id: 6,
-    texto: 'O travesseiro viscoelástico mudou minha vida! Tinha dores no pescoço há anos, e depois de duas semanas usando já percebi uma melhora enorme. Vale cada centavo. A loja é confiável e ágil na entrega.',
-    nome: 'André Santos',
-    cidade: 'Bacabal, MA',
-    estrelas: 5,
-    inicial: 'A',
-    foto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160&q=80',
-  },
-];
+
+
+/* Depoimentos fictícios removidos; mantido vazio porque initDepoimentos() ainda referencia esta lista */
+const DEPOIMENTOS_DATA = [];
 
 /* Instagram da loja — o mesmo @ do rodapé do index.html (e do enhancements.js) */
 const INSTAGRAM_USUARIO = 'santarita.colchoesoficial';
@@ -149,8 +97,6 @@ const State = {
   filtroDensidade:  'todas',
   filtroOrdenacao:  'padrao',
   mostrandoTodos:   false,
-  depoimentoAtual:  0,
-  depTotal:         DEPOIMENTOS_DATA.length,
   usuario:          null, // { nome, email } após login
 };
 
@@ -543,9 +489,7 @@ const renderizarVitrine = async () => {
       densidade: State.filtroDensidade,
       ordenacao: State.filtroOrdenacao,
     });
-    console.log('=== TESTE VITRINE ===');
-console.log('Produtos recebidos:', produtos);
-console.log('Quantidade:', produtos.length);
+    
   } catch (err) {
     console.error('[Vitrine]', err);
     grid.innerHTML = '<p class="vitrine-vazia">Erro ao carregar produtos. Tente novamente.</p>';
@@ -1260,11 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Scroll-reveal global (para elementos que não são da vitrine)
   setTimeout(observarReveal, 500);
 
-  console.log(
-    '%c🛏️ Santa Rita - Casa dos Colchões%c\nFront-end carregado com sucesso!\nWhatsApp Vendas: (99) 99701-7188',
-    'font-weight:bold;font-size:14px;color:#D92525;',
-    'color:#1E4D8C;'
-  );
+ 
 });
 
 /* ================================================
@@ -2186,4 +2126,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Garantir que renderizarVitrine leia favs do localStorage */
   State.favoritos = Favoritos.getIds();
+});
+
+/* Botão X do menu mobile: fecha o menu reaproveitando o clique do hambúrguer */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('nav-fechar')?.addEventListener('click', () => {
+    if (document.getElementById('main-nav')?.classList.contains('aberto')) {
+      document.getElementById('hamburger')?.click();
+    }
+  });
 });

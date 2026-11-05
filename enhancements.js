@@ -121,7 +121,7 @@
     (function initSuporteWidget() {
       if (document.querySelector('.suporte-fab')) return; // evita duplicar
 
-      var NUM_WHATS = '44998608375';
+      var NUM_WHATS = '5544998608375';
       var LINK_INSTA = 'https://instagram.com/santarita.colchoesoficial';
 
       var perguntas = [
