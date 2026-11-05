@@ -578,7 +578,7 @@ section { padding-block: var(--espaco-secao); }
 /* ================================================
    AUTH (login / cadastro) — base
    ================================================ */
-.auth-page { background: var(--papel); }
+.auth-page { background:linear-gradient(#16213A,#490d14,#1D2333); }
 .auth-main { padding-block: 40px; }
 .auth-split {
   max-width: 1080px; margin-inline: auto; display: grid; grid-template-columns: 1fr 1.05fr;
@@ -671,3 +671,8 @@ section { padding-block: var(--espaco-secao); }
   .auth-form__header { text-align: center; }
   .auth-form__logo { width: 180px; margin: 0 auto 18px; }
 }
+
+/* Login: sem rodapé e card centralizado na tela */
+body:has(.auth-main) > .footer { display: none; }
+.auth-main { display: flex; align-items: center; justify-content: center; }
+.auth-main .auth-split { width: 100%; }
