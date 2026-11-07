@@ -159,7 +159,7 @@ section { padding-block: var(--espaco-secao); }
 /* ================================================
    HEADER
    ================================================ */
-.header { background: var(--branco); position: sticky; top: 0; z-index: 60; border-bottom: 1px solid transparent; transition: var(--transicao); }
+.header {  position: sticky; top: 0; z-index: 60; border-bottom: 1px solid transparent; transition: var(--transicao); }
 .header--scrolled { border-bottom-color: var(--linha); box-shadow: var(--sombra-sm); }
 .header__inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 14px; }
 
@@ -193,7 +193,7 @@ section { padding-block: var(--espaco-secao); }
 
 @media (max-width: 900px) {
   .hamburger { display: flex; }
-  .header__nav { position: fixed; inset: 0 0 0 30%; background: var(--branco); transform: translateX(100%); transition: transform .3s ease; z-index: 70; padding: 90px 28px 28px; box-shadow: var(--sombra-lg); }
+  .header__nav { position: fixed; inset: 0 0 0 30%; ; transform: translateX(100%); transition: transform .3s ease; z-index: 70; padding: 90px 28px 28px; box-shadow: var(--sombra-lg); }
   .header__nav.aberto { transform: translateX(0); }
   .nav__list { flex-direction: column; align-items: flex-start; gap: 22px; }
   .nav__link { font-size: 1.1rem; }
@@ -637,7 +637,7 @@ section { padding-block: var(--espaco-secao); }
 /* ================================================
    RESPONSIVO GERAL
    ================================================ */
-@media (max-width: 800px) {
+@media (max-width: 640px) {
   .header__nav:not(.aberto) { display: none; }
 }
 /* Feed do Instagram */
@@ -730,5 +730,42 @@ body:has(.auth-main) > .footer { display: none; }
         overscroll-behavior-x: contain;
         scroll-behavior: smooth;
         touch-action: pan-x pan-y;
+    }
+}
+
+@media (max-width: 640px) {
+    .header__nav {
+        position: fixed;
+        top: 0;
+        right: 0;
+
+        width: 300px;
+        max-width: 85vw;
+        height: 60dvh;
+
+        padding: 80px 28px 30px;
+
+        background: var(--papel);
+        z-index: 9999;
+
+        box-sizing: border-box;
+    }
+
+    .nav__list {
+        width: 100%;
+        gap: 22px;
+    }
+
+    .nav__link {
+        display: flex;
+        width: 100%;
+        font-size: 17px;
+        padding: 12px 0;
+    }
+
+    .nav__fechar {
+        position: absolute;
+        top: 22px;
+        right: 22px;
     }
 }
