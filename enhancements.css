@@ -213,7 +213,7 @@ img { transition: filter .4s ease; }
 .suporte-fab {
   position: fixed; right: 24px; bottom: 24px; z-index: 200;
   width: 58px; height: 58px; border-radius: 50%;
-  background: var(--marinho, #16213A); color: #fff;
+  background: linear-gradient(#16213A,#410303); color: #fff;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 10px 26px rgba(22,33,58,.35); border: 0; cursor: pointer;
   transition: transform .25s ease, background .25s ease;

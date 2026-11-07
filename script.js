@@ -2136,3 +2136,103 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// Navbar: esconde ao descer e aparece ao subir
+function initHeaderScroll() {
+    const header = document.querySelector('.header');
+
+    if (!header) return;
+
+    let ultimaPosicao = window.scrollY;
+    const limite = 100;
+    let bloqueado = false;
+
+    window.addEventListener('scroll', () => {
+        if (bloqueado) return;
+
+        bloqueado = true;
+
+        requestAnimationFrame(() => {
+            const posicaoAtual = window.scrollY;
+
+            // No topo, mantém a navbar visível
+            if (posicaoAtual <= limite) {
+                header.classList.remove('header--hidden');
+            }
+            // Rolando para baixo, esconde
+            else if (posicaoAtual > ultimaPosicao) {
+                header.classList.add('header--hidden');
+            }
+            // Rolando para cima, mostra
+            else if (posicaoAtual < ultimaPosicao) {
+                header.classList.remove('header--hidden');
+            }
+
+            ultimaPosicao = posicaoAtual;
+            bloqueado = false;
+        });
+    }, { passive: true });
+}
+
+initHeaderScroll();
+
+// AUTOPLAY DO CARROSSEL DE CATEGORIAS
+document.addEventListener('DOMContentLoaded', () => {
+    const carrossel = document.getElementById('categorias-grid');
+
+    if (!carrossel) return;
+
+    // Ativa somente no mobile
+    if (!window.matchMedia('(max-width: 640px)').matches) return;
+
+    let intervalo;
+
+    function avancarCategoria() {
+        const primeiroCard = carrossel.querySelector('.cat-card');
+        if (!primeiroCard) return;
+
+        const gap = parseFloat(getComputedStyle(carrossel).gap) || 12;
+        const passo = primeiroCard.offsetWidth + gap;
+
+        const limite = carrossel.scrollWidth - carrossel.clientWidth;
+
+        if (carrossel.scrollLeft >= limite - 5) {
+            carrossel.scrollTo({
+                left: 0,
+                behavior: 'smooth'
+            });
+        } else {
+            carrossel.scrollBy({
+                left: passo,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    function iniciar() {
+        if (intervalo) return;
+
+        intervalo = setInterval(avancarCategoria, 3000);
+    }
+
+    function pausar() {
+        clearInterval(intervalo);
+        intervalo = null;
+    }
+
+    iniciar();
+
+    // Pausa quando o usuário interage
+    carrossel.addEventListener('touchstart', pausar, { passive: true });
+    carrossel.addEventListener('touchend', iniciar);
+    carrossel.addEventListener('mouseenter', pausar);
+    carrossel.addEventListener('mouseleave', iniciar);
+    carrossel.addEventListener('focusin', pausar);
+    carrossel.addEventListener('focusout', iniciar);
+
+    // Pausa quando a página fica em segundo plano
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) pausar();
+        else iniciar();
+    });
+});
